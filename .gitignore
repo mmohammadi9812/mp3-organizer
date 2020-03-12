@@ -16,3 +16,6 @@
 # Dependency directories (remove the comment below to include it)
 # vendor/
 
+mp3test/
+mp3dest/
+mp3test.bak/
