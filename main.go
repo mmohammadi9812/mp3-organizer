@@ -10,6 +10,7 @@ import (
 	"reflect"
 	"regexp"
 	"strings"
+	"mp3organize/gui"
 )
 
 type metainfo struct {
@@ -144,6 +145,7 @@ func moveFiles(mp3Dir, saveDir string) {
 	if err != nil {
 		panic(err)
 	}
+	files = gui.CheckFiles(files)
 	for _, file := range files {
 		meta, err := getMeta(file)
 		if isEmpty(meta) {
