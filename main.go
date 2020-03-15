@@ -4,13 +4,13 @@ import (
 	"fmt"
 	"github.com/dhowden/tag"
 	"github.com/mitchellh/go-homedir"
+	"mp3organize/gui"
 	"os"
 	"path"
 	"path/filepath"
 	"reflect"
 	"regexp"
 	"strings"
-	"mp3organize/gui"
 )
 
 type metainfo struct {
