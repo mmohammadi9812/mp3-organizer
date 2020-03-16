@@ -27,12 +27,7 @@ func CheckFiles(files []string) (checkedFiles []string) {
 	w := a.NewWindow("MP3 Organizor")
 
 	var (
-		//checkBoxes []fyne.CanvasObject
-		storeChecks []*check
-		confirmed   = false
-	)
-
-	var (
+		confirmed  = false
 		quitButton = widget.NewButton("Quit", func() {
 			a.Quit()
 		})
@@ -41,20 +36,31 @@ func CheckFiles(files []string) (checkedFiles []string) {
 			confirmed = true
 			a.Quit()
 		})
+		filesBox      = widget.NewGroupWithScroller("Musics")
+		buttonsBox    = fyne.NewContainerWithLayout(layout.NewAdaptiveGridLayout(2), quitButton, okButton)
+		labelsArr     []*check
+		checkBoxesArr []*widget.Check
+		selectAll     = widget.NewCheck("Select All", func(on bool) {
+			for _, checkBox := range checkBoxesArr {
+				checkBox.SetChecked(on)
+			}
+		})
 	)
 
-	var (
-		filesBox   = widget.NewGroupWithScroller("Musics")
-		buttonsBox = fyne.NewContainerWithLayout(layout.NewAdaptiveGridLayout(2), quitButton, okButton)
-	)
+	selectAll.SetChecked(true)
+
+	filesBox.Append(selectAll)
 
 	for _, file := range files {
-		var fileCheck = check{
-			checked: false,
+		var newLabel = check{
+			checked: true,
 			label:   file,
 		}
-		storeChecks = append(storeChecks, &fileCheck)
-		filesBox.Append(widget.NewCheck(filepath.Base(fileCheck.label), fileCheck.toggle))
+		labelsArr = append(labelsArr, &newLabel)
+		checkBox := widget.NewCheck(filepath.Base(newLabel.label), newLabel.toggle)
+		checkBox.SetChecked(true)
+		checkBoxesArr = append(checkBoxesArr, checkBox)
+		filesBox.Append(checkBox)
 	}
 
 	w.SetContent(
@@ -71,11 +77,16 @@ func CheckFiles(files []string) (checkedFiles []string) {
 	})
 	w.ShowAndRun()
 
-	for _, checkBox := range storeChecks {
-		if checkBox.checked {
-			checkedFiles = append(checkedFiles, checkBox.label)
+	for _, label := range labelsArr {
+		if label.checked {
+			checkedFiles = append(checkedFiles, label.label)
 		}
 	}
 
-	return checkedFiles
+	if confirmed {
+		return checkedFiles
+	} else {
+		return []string{}
+	}
+
 }
