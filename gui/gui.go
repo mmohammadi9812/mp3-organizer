@@ -18,7 +18,7 @@ func (c *check) toggle(on bool) {
 }
 
 func CheckFiles(files []string) (checkedFiles []string) {
-	icon, err := fyne.LoadResourceFromPath("C:\\Users\\Mohammad\\Documents\\Code\\GO\\mp3Organizer\\gui\\icon.png")
+	icon, err := fyne.LoadResourceFromPath("./gui\\icon.png")
 	if err != nil {
 		panic(err)
 	}
