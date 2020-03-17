@@ -18,12 +18,12 @@ func (c *check) toggle(on bool) {
 }
 
 func CheckFiles(files []string) (checkedFiles []string) {
-	icon, err := fyne.LoadResourceFromPath("./gui\\icon.png")
-	if err != nil {
-		panic(err)
-	}
+	//icon, err := fyne.LoadResourceFromPath("gui\\icon.png")
+	//if err != nil {
+	//	panic(err)
+	//}
 	a := app.New()
-	a.SetIcon(icon)
+	//a.SetIcon(icon)
 	w := a.NewWindow("MP3 Organizor")
 
 	var (
