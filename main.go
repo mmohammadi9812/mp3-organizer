@@ -3,7 +3,6 @@ package main
 import (
 	"fmt"
 	"github.com/dhowden/tag"
-	"github.com/mitchellh/go-homedir"
 	"mp3organize/gui"
 	"os"
 	"path"
@@ -20,61 +19,10 @@ type metainfo struct {
 }
 
 func (m *metainfo) clean() {
-	re := regexp.MustCompile("(?i)(\\(|\\[)?[^ \t]+\\.(com|ir|net)(\\)|])|(@[^ \t])|\"")
+	re := regexp.MustCompile("(?i)(\\(|\\[)?[^ \t]+\\.(com|ir|net|org)(\\)|])|(@[^ \t])|\"")
 	m.title = strings.TrimSpace(re.ReplaceAllString(strings.TrimSpace(m.title), ""))
 	m.artist = strings.TrimSpace(re.ReplaceAllString(strings.TrimSpace(m.artist), ""))
 	m.album = strings.TrimSpace(re.ReplaceAllString(strings.TrimSpace(m.album), ""))
-}
-
-func showHelp() {
-	fmt.Printf("Usage:\n%s [source music directory] (optional)[destination]", os.Args[0])
-}
-
-func validateRaise(src, dest string) {
-	var (
-		windowsAbsRegex = regexp.MustCompile("[a-zA-Z]:\\\\.+")
-		cwd             = os.Getenv("PWD")
-	)
-	if windowsAbsRegex.MatchString(src) || path.IsAbs(src) {
-		if fs, err := os.Stat(src); os.IsNotExist(err) || !fs.IsDir() {
-			panic(err)
-		}
-	} else {
-		absSrc := path.Join(cwd, src)
-		if fs, err := os.Stat(absSrc); os.IsNotExist(err) || !fs.IsDir() {
-			panic(err)
-		}
-	}
-
-	if windowsAbsRegex.MatchString(dest) || path.IsAbs(dest) {
-		if fs, err := os.Stat(dest); os.IsExist(err) && !fs.IsDir() {
-			panic("Destination is not a folder.")
-		} else if os.IsNotExist(err) {
-			err = os.MkdirAll(dest, os.ModePerm)
-			if err != nil {
-				panic(err)
-			}
-		}
-	} else {
-		absDest := path.Join(cwd, dest)
-		if fs, err := os.Stat(dest); os.IsExist(err) && !fs.IsDir() {
-			panic("Destination is not a folder.")
-		} else if os.IsNotExist(err) {
-			err = os.MkdirAll(absDest, os.ModePerm)
-			if err != nil {
-				panic(err)
-			}
-		}
-	}
-}
-
-func getMP3Files(src string) (mp3Files []string, err error) {
-	mp3Files, err = filepath.Glob(path.Join(src, "*.[mM][pP]3"))
-	if err != nil {
-		panic(err)
-	}
-	fmt.Printf("Found %d mp3 files in %s ...\n", len(mp3Files), src)
-	return mp3Files, nil
 }
 
 func getMeta(filePath string) (metainfo, error) {
@@ -101,18 +49,48 @@ func getMeta(filePath string) (metainfo, error) {
 	return *result, nil
 }
 
-func moveFile(mp3Path, dest string, info metainfo) {
+func moveFile(mp3Path, dest string, format [2]string, info metainfo) {
 	if info.title == "" || info.artist == "" {
 		fmt.Printf("Skipping %s as it doesn't have title or artist name in it's tags ...\n", filepath.Base(mp3Path))
 		return
 	}
-	destDir := path.Join(dest, info.artist)
-	err := os.MkdirAll(destDir, os.ModePerm)
-	if err != nil {
-		panic(err)
+
+	var (
+		fileDest string
+		destDir  string
+		err      error
+		fileName = info.title + ".mp3"
+	)
+
+	if format[0] == "artist" {
+		if format[1] == "/" {
+			destDir = path.Join(dest, info.artist)
+			err = os.MkdirAll(destDir, os.ModePerm)
+			if err != nil {
+				panic(err)
+			}
+			fileDest = path.Join(destDir, fileName)
+		} else {
+			fileDest = path.Join(dest, fmt.Sprintf("%s - %s", info.artist, fileName))
+		}
+	} else {
+		destDir = path.Join(dest, info.artist)
+		if format[1] == "/" {
+			destDir = path.Join(destDir, info.album)
+			err = os.MkdirAll(destDir, os.ModePerm)
+			if err != nil {
+				panic(err)
+			}
+			fileDest = path.Join(destDir, fileName)
+		} else {
+			err = os.MkdirAll(destDir, os.ModePerm)
+			if err != nil {
+				panic(err)
+			}
+			fileDest = path.Join(destDir, fmt.Sprintf("%s - %s", info.album, fileName))
+		}
 	}
-	fileName := info.title + ".mp3"
-	fileDest := path.Join(destDir, fileName)
+
 	err = os.Rename(mp3Path, fileDest)
 	if err != nil {
 		panic(err)
@@ -140,47 +118,37 @@ func isEmpty(object interface{}) bool {
 	}
 	return false
 }
-func moveFiles(mp3Dir, saveDir string) {
-	files, err := getMP3Files(mp3Dir)
-	if err != nil {
-		panic(err)
-	}
-	files = gui.CheckFiles(files)
-	for _, file := range files {
-		meta, err := getMeta(file)
-		if isEmpty(meta) {
-			continue
-		}
-		if err != nil {
+
+func singleAlbums(wantSingle bool, meta *metainfo) {
+	if wantSingle {
+		if meta.album == "" {
+			meta.album = "Single"
+		} else if matched, err := regexp.MatchString("(?i)single", meta.album); err == nil && matched {
+			meta.album = "Single"
+		} else if matched, err = regexp.MatchString("(?i)"+meta.title, meta.album); err == nil && matched {
+			meta.album = "Single"
+		} else if err != nil {
 			panic(err)
+		} else {
+			return
 		}
-		moveFile(file, saveDir, meta)
+	} else {
+		return
 	}
 }
 
 func main() {
-	var (
-		src  string
-		dest string
-		home string
-		err  error
-	)
-	home, err = homedir.Dir()
-	if err != nil {
-		panic(err)
+	files := gui.GetFiles()
+	saveDir := gui.Dest
+	for _, file := range files {
+		meta, err := getMeta(file)
+		if err != nil {
+			panic(err)
+		}
+		if isEmpty(meta) {
+			continue
+		}
+		singleAlbums(gui.Single, &meta)
+		moveFile(file, saveDir, gui.Format, meta)
 	}
-	switch len(os.Args) {
-	case 2:
-		src = os.Args[1]
-		dest = path.Join(home, "Music")
-	case 3:
-		src = os.Args[1]
-		dest = os.Args[2]
-	default:
-		showHelp()
-		os.Exit(0)
-	}
-	validateRaise(src, dest)
-	fmt.Printf("Moving files from %s to %s\n", filepath.Base(src), filepath.Base(dest))
-	moveFiles(src, dest)
 }
