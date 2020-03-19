@@ -8,6 +8,13 @@ import (
 	"path/filepath"
 )
 
+var (
+	confirmed     = false
+	myapp         fyne.App
+	mywindow      fyne.Window
+	filesCheckBox []*widget.Check
+)
+
 type check struct {
 	label   string
 	checked bool
@@ -17,65 +24,82 @@ func (c *check) toggle(on bool) {
 	c.checked = on
 }
 
-func CheckFiles(files []string) (checkedFiles []string) {
-	//icon, err := fyne.LoadResourceFromPath("gui\\icon.png")
-	//if err != nil {
-	//	panic(err)
-	//}
-	a := app.New()
-	//a.SetIcon(icon)
-	w := a.NewWindow("MP3 Organizor")
-
+func getButtonsContainer() *fyne.Container {
 	var (
-		confirmed  = false
 		quitButton = widget.NewButton("Quit", func() {
-			a.Quit()
+			myapp.Quit()
 		})
 
 		okButton = widget.NewButton("Ok", func() {
 			confirmed = true
-			a.Quit()
+			myapp.Quit()
 		})
-		filesBox      = widget.NewGroupWithScroller("Musics")
-		buttonsBox    = fyne.NewContainerWithLayout(layout.NewAdaptiveGridLayout(2), quitButton, okButton)
-		labelsArr     []*check
-		checkBoxesArr []*widget.Check
-		selectAll     = widget.NewCheck("Select All", func(on bool) {
-			for _, checkBox := range checkBoxesArr {
-				checkBox.SetChecked(on)
-			}
-		})
+		buttonsContainer = fyne.NewContainerWithLayout(layout.NewAdaptiveGridLayout(2), quitButton, okButton)
 	)
+	return buttonsContainer
+}
 
-	selectAll.SetChecked(true)
+func getSelectAllButton() *widget.Check {
+	selectAllButton := widget.NewCheck("Select All", func(on bool) {
+		for _, checkBox := range filesCheckBox {
+			checkBox.SetChecked(on)
+		}
+	})
+	return selectAllButton
+}
 
-	filesBox.Append(selectAll)
+func getFilesBox(files []string, title string) (filesBox *widget.Group, labelsArr []*check) {
+	filesBox = widget.NewGroupWithScroller(title)
 
 	for _, file := range files {
 		var newLabel = check{
 			checked: true,
 			label:   file,
 		}
+
 		labelsArr = append(labelsArr, &newLabel)
 		checkBox := widget.NewCheck(filepath.Base(newLabel.label), newLabel.toggle)
 		checkBox.SetChecked(true)
-		checkBoxesArr = append(checkBoxesArr, checkBox)
+		filesCheckBox = append(filesCheckBox, checkBox)
 		filesBox.Append(checkBox)
+
 	}
 
-	w.SetContent(
+	return filesBox, labelsArr
+}
+
+func CheckFiles(files []string) (checkedFiles []string) {
+	//icon, err := fyne.LoadResourceFromPath("gui\\icon.png")
+	//if err != nil {
+	//	panic(err)
+	//}
+	myapp = app.New()
+	//a.SetIcon(icon)
+	mywindow = myapp.NewWindow("MP3 Organizor")
+
+	var (
+		filesBox, labelsArr = getFilesBox(files, "Musics")
+		buttonsContainer    = getButtonsContainer()
+		selectAll           = getSelectAllButton()
+	)
+
+	selectAll.SetChecked(true)
+
+	filesBox.Append(selectAll)
+
+	mywindow.SetContent(
 		fyne.NewContainerWithLayout(
-			layout.NewBorderLayout(nil, buttonsBox, nil, nil),
+			layout.NewBorderLayout(nil, buttonsContainer, nil, nil),
 			filesBox,
-			buttonsBox,
+			buttonsContainer,
 		),
 	)
 
-	w.Resize(fyne.Size{
+	mywindow.Resize(fyne.Size{
 		Width:  320,
 		Height: 480,
 	})
-	w.ShowAndRun()
+	mywindow.ShowAndRun()
 
 	for _, label := range labelsArr {
 		if label.checked {
