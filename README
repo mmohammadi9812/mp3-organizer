@@ -1,7 +1,7 @@
 mp3Organizer
 ================================
 Usage
-    *mp3Organizor.exe*
+    mp3Organizor.exe
     Select source and destination folder in shown window
     Destination folder by default is ~/Music
 
