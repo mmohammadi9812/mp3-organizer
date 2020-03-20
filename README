@@ -1,0 +1,11 @@
+mp3Organizer
+================================
+Usage
+    *mp3Organizor.exe*
+    Select source and destination folder in shown window
+    Destination folder by default is ~/Music
+
+Options
+    Files can be recursively chosen
+    When "artist/album" is chosen, an option is shown
+    to move all single tracks to one folder named Single

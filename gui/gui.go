@@ -206,7 +206,7 @@ func getOptsSlice() []*widget.Check {
 			handleOpt("selectall", on)
 		})
 	)
-	recursiveButton.SetChecked(true)
+	recursiveButton.SetChecked(false)
 	compressSingleButton.SetChecked(false)
 	compressSingleButton.Hide()
 
