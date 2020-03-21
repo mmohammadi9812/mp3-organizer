@@ -3,7 +3,7 @@ package main
 import (
 	"fmt"
 	"github.com/dhowden/tag"
-	"mp3organize/gui"
+	"github.com/mmohammadi9812/mp3organizer/gui"
 	"os"
 	"path"
 	"path/filepath"
